@@ -85,6 +85,7 @@ struct MySTAAAk
 int STAAAkCtor(struct MySTAAAk * stk,const char * STAAAk_name, size_t capacity);
 int STAAAkPush(struct MySTAAAk * stk, STAAAkType value);
 int STAAAkPop(struct MySTAAAk * stk, STAAAkType * var);
+void STAAAkChange(struct MySTAAAk * stk, STAAAK_CHANGE condition);
 void PoisonFiller(struct MySTAAAk * stk, size_t poison_counter);
 int STAAAkDtor(struct MySTAAAk * stk);
 unsigned int Djb2_hash(struct MySTAAAk * stk);
