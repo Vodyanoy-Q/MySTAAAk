@@ -2,6 +2,8 @@
 
 #include "STAAAk.h"
 
+// bash script
+
 int main()
 {
     const char * STAAAk_name = "stk";

@@ -2,14 +2,20 @@
 #define _STAAAK_H_
 
 #define MY_ASSERT(addres) if(!addres)                                                        \
-                              {                                                              \
-                                  printf(" ERROR\n line %d\n file %s\n func %s\n",           \
-                                         __LINE__, __FILE__, __func__);                      \
+                          {                                                                  \
+                              printf(" ERROR\n line %d\n file %s\n func %s\n",               \
+                                     __LINE__, __FILE__, __func__);                          \
+                                                                                             \
+                              STAAAkDump(stk);                                               \
+                                                                                             \
+                              exit (ADDRES_ERROR);                                           \
+                          }                                                                  \
+
+#define ELEMENT_VERIFY(msg, elem) printf("%s%s IS NOT OKEY%s\n\n", RED, msg, RESET_COLOR);\
                                                                                              \
                                   STAAAkDump(stk);                                           \
                                                                                              \
-                                  exit (ADDRES_ERROR);                                       \
-                              }                                                              \
+                                  exit (msg_##ERROR);                                        \
 
 //==============-COLORS-=================
 
@@ -30,7 +36,8 @@ typedef int STAAAkType;
 
 enum ERROR_CODE
 {
-    ERROR = -1,
+    NO_ERROR = 0,
+    ERROR = 1,
     CANARY_ERROR = -2,
     STK_ADDRES_ERROR = -3,
     DATA_ERROR = -4,
@@ -38,6 +45,7 @@ enum ERROR_CODE
     HASH_ERROR = -6,
     CHANGE_ERROR = -7,
     ADDRES_ERROR = -8,
+    FILE_ERROR = -9,
 };
 
 enum STAAAK_CHANGE
@@ -67,7 +75,7 @@ struct MySTAAAk
     size_t size = 0;
     size_t capacity = 0;
 
-    unsigned long hash;
+    unsigned long hash = 0;
 
     int canary_2 = CANARY_VAL_1;
 };
@@ -76,8 +84,7 @@ struct MySTAAAk
 
 int STAAAkCtor(struct MySTAAAk * stk,const char * STAAAk_name, size_t capacity);
 int STAAAkPush(struct MySTAAAk * stk, STAAAkType value);
-int STAAAkPop(struct MySTAAAk * stk, STAAAkType * VAR);
-void STAAAkChange(struct MySTAAAk * stk, int condition);
+int STAAAkPop(struct MySTAAAk * stk, STAAAkType * var);
 void PoisonFiller(struct MySTAAAk * stk, size_t poison_counter);
 int STAAAkDtor(struct MySTAAAk * stk);
 unsigned int Djb2_hash(struct MySTAAAk * stk);

@@ -9,7 +9,6 @@ int STAAAkCtor(struct MySTAAAk * stk,const char * STAAAk_name, size_t capacity)
 
     stk->data = (STAAAkType*)calloc(capacity + 2, sizeof(STAAAkType));
     MY_ASSERT(stk->data);
-
     stk->data = stk->data + 1;
 
     stk->canary_1 = CANARY_VAL_1;
@@ -17,14 +16,11 @@ int STAAAkCtor(struct MySTAAAk * stk,const char * STAAAk_name, size_t capacity)
     stk->STAAAk_name = STAAAk_name;
 
     stk->capacity = capacity;
+    stk->size = 0;
 
     PoisonFiller(stk, 0);
-
     *(stk->data - 1) = DATA_CANARY_VAL_1;
-
     stk->data[stk->capacity] = DATA_CANARY_VAL_2;
-
-    stk->size = 0;
 
     stk->hash = Djb2_hash(stk);
 
@@ -37,7 +33,7 @@ int STAAAkPush(struct MySTAAAk * stk, STAAAkType value)
 {
     STAAAkVerify(stk);
 
-    if (stk->size  + 1> stk->capacity)
+    if (stk->size == stk->capacity)
     {
         STAAAkChange(stk, UP);
     }
@@ -51,7 +47,7 @@ int STAAAkPush(struct MySTAAAk * stk, STAAAkType value)
     return 0;
 }
 
-void STAAAkChange(struct MySTAAAk * stk, int condition)
+void STAAAkChange(struct MySTAAAk * stk, STAAAK_CHANGE condition)
 {
     switch (condition)
     {
@@ -61,7 +57,7 @@ void STAAAkChange(struct MySTAAAk * stk, int condition)
 
             stk->capacity *= 2;
 
-            stk->data = 1 + (STAAAkType*)realloc(stk->data - 1, (stk->capacity + 2)* sizeof(STAAAkType));
+            stk->data = (STAAAkType*)realloc(stk->data - 1, (stk->capacity + 2) * sizeof(STAAAkType)) + 1;
             MY_ASSERT(stk->data);
 
             stk->data[stk->capacity] = DATA_CANARY_VAL_2;
@@ -84,7 +80,7 @@ void STAAAkChange(struct MySTAAAk * stk, int condition)
                 stk->capacity /= 4;
             }
 
-            stk->data = 1 + (STAAAkType*)realloc(stk->data - 1, (stk->capacity + 2)* sizeof(STAAAkType));
+            stk->data = (STAAAkType*)realloc(stk->data - 1, (stk->capacity + 2) * sizeof(STAAAkType)) + 1;
             MY_ASSERT(stk->data);
 
             stk->data[stk->capacity] = DATA_CANARY_VAL_2;
@@ -111,7 +107,7 @@ void PoisonFiller(struct MySTAAAk * stk, size_t poison_counter)
     printf("\n");
 }
 
-int STAAAkPop(struct MySTAAAk * stk, STAAAkType * VAR)
+int STAAAkPop(struct MySTAAAk * stk, STAAAkType * var)
 {
     STAAAkVerify(stk);
 
@@ -121,7 +117,7 @@ int STAAAkPop(struct MySTAAAk * stk, STAAAkType * VAR)
     }
     else
     {
-        *VAR = stk->data[stk->size - 1];
+        *var = stk->data[stk->size - 1];
 
         stk->data[stk->size - 1] = POISON;
 
@@ -214,38 +210,191 @@ int STAAAkVerify(struct MySTAAAk * stk)
 
 void STAAAkDump(struct MySTAAAk * stk)
 {
-    printf("%s=======================================%s\n", YELLOW, RESET_COLOR);
+    FILE * LOG = fopen("LOG.txt", "w");
 
-    printf("%sSTAAAk Name%s %s=%s %s%s%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->STAAAk_name,RESET_COLOR);
-
-    printf("%scanary 1%s %s=%s %s%d%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->canary_1, RESET_COLOR);
-    printf("%scanary 2%s %s=%s %s%d%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->canary_2, RESET_COLOR);
-    printf("%sdata%s %s=%s %s%p%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->data, RESET_COLOR);
-    printf("%sdata canary 1%s %s=%s %s%d%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, *(stk->data - 1), RESET_COLOR);
-    printf("%sdata canary 2%s %s=%s %s%d%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->data[stk->capacity], RESET_COLOR);
-    printf("%shash%s %s=%s %s%lu%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->hash,RESET_COLOR);
-
-    printf("%s-------------------------%s\n", GREEN, RESET_COLOR);
-
-    printf("%sSTAAAk%s\n\n", CYAN, RESET_COLOR);
-
-    for (unsigned int i = 0; i < stk->capacity; i++)
+    if (LOG != NULL)
     {
-        if (i < stk->size)
+
+        fprintf(LOG,"=======================================\n");
+
+        if (stk == NULL)
         {
-            printf("%s*%s%s[%s%s%2d%s%s]%s %s=%s %s%d%s\n", YELLOW, RESET_COLOR, BLUE, RESET_COLOR, MAGN, i + 1, RESET_COLOR, BLUE, RESET_COLOR, RED, RESET_COLOR, CYAN, stk->data[i], RESET_COLOR);
+            fprintf(LOG,"STAAAk ADDRES is NULL"
+                        "It is impossible to provide information");
+
+            fprintf(LOG,"=======================================\n");
+
+            fclose(LOG);
+
         }
         else
         {
-            printf(" %s[%s%s%2d%s%s]%s %s=%s %s%d%s %s[POISON]%s\n", BLUE, RESET_COLOR, MAGN, i + 1, RESET_COLOR, BLUE, RESET_COLOR, RED, RESET_COLOR, CYAN, stk->data[i], RESET_COLOR, GREEN, RESET_COLOR);
+            fprintf(LOG,"STAAAk Name = %s\n", stk->STAAAk_name);
+
+            fprintf(LOG,"canary 1 = %d\n", stk->canary_1);
+            fprintf(LOG,"canary 2 = %d\n", stk->canary_2);
+            fprintf(LOG,"data = %p\n", stk->data);
+            fprintf(LOG,"data canary 1 = %d\n", *(stk->data - 1));
+            fprintf(LOG,"data canary 2 = %d\n", stk->data[stk->capacity]);
+            fprintf(LOG,"hash = %lu\n", stk->hash);
+
+            if(stk->data == NULL)
+            {
+                fprintf(LOG,"Data is NULL"
+                            "Cant write STAAAk\n");
+            }
+            else
+            {
+                fprintf(LOG,"-------------------------\n");
+
+                fprintf(LOG,"STAAAk\n\n");
+
+                if (stk->capacity != 0)
+                {
+                    for (unsigned int i = 0; i < stk->capacity; i++)
+                    {
+                        if (i < stk->size)
+                        {
+                            fprintf(LOG,"*[%2d] = %d\n", i + 1, stk->data[i]);
+                        }
+                        else
+                        {
+                            fprintf(LOG," [%2d] = %d [POISON]\n", i + 1, stk->data[i]);
+                        }
+                    }
+                }
+                else if(stk->size != 0)
+                {
+                    fprintf(LOG,"Capacity = 0. Write data from size\n");
+
+                    for (unsigned int i = 0; i < stk->size; i++)
+                    {
+                        if (i < stk->size)
+                        {
+                            fprintf(LOG,"*[%2d] = %d\n", i + 1, stk->data[i]);
+                        }
+                        else
+                        {
+                            fprintf(LOG," [%2d] = %d [POISON]\n", i + 1, stk->data[i]);
+                        }
+                    }
+
+                }
+                else
+                {
+                    fprintf(LOG,"Size and capacity is zero"
+                                "Try to write data from sizeof");
+
+                    unsigned int sizef = sizeof(stk->data)/(stk->data[0]);
+
+                    for (unsigned int i = 0; i < sizef; i++)
+                    {
+                        fprintf(LOG,"*[%2d] = %d\n", i + 1, stk->data[i]);
+                    }
+                }
+
+                fprintf(LOG,"\nEND OF STAAAk\n");
+
+                fprintf(LOG,"-------------------------\n");
+            }
+
+            fprintf(LOG,"=======================================\n");
+
+            fclose(LOG);
         }
     }
+    else
+    {
+        printf("FILE CANT BE OPENED\n");
 
-    printf("\n%sEND OF STAAAk%s\n", CYAN, RESET_COLOR);
+        printf("=======================================\n");
 
-    printf("%s-------------------------%s\n", GREEN, RESET_COLOR);
+        if (stk == NULL)
+        {
+            printf("STAAAk ADDRES is NULL"
+                        "It is impossible to provide information");
 
-    printf("%s=======================================%s\n", YELLOW, RESET_COLOR);
+            printf("=======================================\n");
+
+        }
+        else
+        {
+            printf("%sSTAAAk Name%s %s=%s %s%s%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->STAAAk_name, RESET_COLOR);
+
+            printf("%scanary 1%s %s=%s %s%d%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->canary_1, RESET_COLOR);
+            printf("%scanary 2%s %s=%s %s%d%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->canary_2, RESET_COLOR);
+            printf("%sdata%s %s=%s %s%p%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->data, RESET_COLOR);
+            printf("%sdata canary 1%s %s=%s %s%d%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, *(stk->data - 1), RESET_COLOR);
+            printf("%sdata canary 2%s %s=%s %s%d%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->data[stk->capacity], RESET_COLOR);
+            printf("%shash%s %s=%s %s%lu%s\n", BLUE, RESET_COLOR, RED, RESET_COLOR,  CYAN, stk->hash,RESET_COLOR);
+
+            if(stk->data == NULL)
+            {
+                printf("Data is NULL"
+                       "Cant write STAAAk\n");
+            }
+            else
+            {
+                printf("-------------------------\n");
+
+                printf("STAAAk\n\n");
+
+                if (stk->capacity != 0)
+                {
+                    for (unsigned int i = 0; i < stk->capacity; i++)
+                    {
+                        if (i < stk->size)
+                        {
+                            printf("*[%2d] = %d\n", i + 1, stk->data[i]);
+                        }
+                        else
+                        {
+                            printf(" [%2d] = %d [POISON]\n", i + 1, stk->data[i]);
+                        }
+                    }
+                }
+                else if(stk->size != 0)
+                {
+                    printf("Capacity = 0. Write data from size\n");
+
+                    for (unsigned int i = 0; i < stk->size; i++)
+                    {
+                        if (i < stk->size)
+                        {
+                            printf("*[%2d] = %d\n", i + 1, stk->data[i]);
+                        }
+                        else
+                        {
+                            printf(" [%2d] = %d [POISON]\n", i + 1, stk->data[i]);
+                        }
+                    }
+
+                }
+                else
+                {
+                    printf("Size and capacity is zero"
+                                "Try to write data from sizeof");
+
+                    unsigned int sizef = sizeof(stk->data)/(stk->data[0]);
+
+                    for (unsigned int i = 0; i < sizef; i++)
+                    {
+                        printf("*[%2d] = %d\n", i + 1, stk->data[i]);
+                    }
+                }
+
+                printf("\nEND OF STAAAk\n");
+
+                printf("-------------------------\n");
+            }
+        }
+
+        printf("=======================================\n");
+
+        fclose(LOG);
+
+        exit (FILE_ERROR);
+    }
 }
 
 unsigned int Djb2_hash(struct MySTAAAk * stk)
